@@ -1,4 +1,4 @@
-import fs from "fs";
+
 
 app.get("/debug-files", (req, res) => {
   const files = fs.readdirSync(path.join(__dirname, "public"));
