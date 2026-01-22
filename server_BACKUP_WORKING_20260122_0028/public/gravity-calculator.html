@@ -1,0 +1,235 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gravity Calculator</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 16px; }
+    input, button, textarea { font-size: 16px; padding: 10px; }
+    input { width: 100%; }
+    .row { display: flex; gap: 12px; align-items: end; margin-top: 12px; flex-wrap: wrap; }
+    button { cursor: pointer; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+    @media (max-width: 700px){ .cols{ grid-template-columns: 1fr; } }
+    textarea { width: 100%; height: 260px; }
+    .muted { color: #666; }
+    .error { color: #b00020; white-space: pre-wrap; }
+    .nav a { margin-right: 12px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 14px; margin-top: 16px; }
+    .big { font-size: 22px; font-weight: 800; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a href="/"><b>Home</b></a>
+    <a href="/welcome.html">Welcome</a>
+    <a href="/gravity-calculator.html"><b>Gravity Calculator</b></a>
+    <a href="/line-calculator.html">Line Calculator</a>
+    <a href="/tt.html">TT Calculator</a>
+    <a href="/cash.html">Cash Game Calculator</a>
+  </div>
+
+  <h1>Gravity Calculator</h1>
+  <p class="muted">
+    Tool 1: Enter a gravity line value → get spots needed using triangular math.<br>
+    Tool 2: Paste a Random.org verify link/code → damages are based on final round finish (1st = 1, 2nd = 2, etc).
+  </p>
+
+  <!-- A) Gravity Line -> Spots Needed -->
+  <div class="card">
+    <h2 style="margin-top:0;">Spots Needed (Gravity Line)</h2>
+    <p class="muted" style="margin-top:0;">
+      Uses: 1 + 2 + ... + n ≥ line value
+    </p>
+
+    <label>
+      Line value
+      <input id="lineValue" type="number" inputmode="numeric" step="1" placeholder="e.g. 400" />
+    </label>
+
+    <div class="row">
+      <button id="calcSpots" type="button">Calculate spots needed</button>
+      <span id="spotsStatus" class="muted"></span>
+    </div>
+
+    <div class="row" style="align-items:center;">
+      <div style="flex:1; min-width:260px;">
+        <div class="muted">Spots needed</div>
+        <div id="spotsNeeded" class="big">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B) Final round damages -->
+  <div class="card">
+    <h2 style="margin-top:0;">Final Round Damages</h2>
+    <p class="muted" style="margin-top:0;">
+      Paste a Random.org <b>verify</b> link or just the code. We pull the giveaway and use <b>only the final round</b>.
+      Damages are based on finish: 1st place = 1 damage, 2nd = 2 damages, etc.
+    </p>
+
+    <label>
+      Verify link / code
+      <input id="verifyInput" placeholder="https://giveaways.random.org/verify/eyueov OR eyueov" />
+    </label>
+
+    <div class="row">
+      <button id="runFinal" type="button">Get final damages</button>
+      <span id="status" class="muted"></span>
+    </div>
+
+    <div id="err" class="error"></div>
+
+    <div class="cols">
+      <div>
+        <div class="row" style="justify-content: space-between;">
+          <h3 style="margin: 0;">Final round standings</h3>
+          <button id="copyFinal" type="button">Copy</button>
+        </div>
+        <textarea id="finalOut" readonly></textarea>
+      </div>
+
+      <div>
+        <div class="row" style="justify-content: space-between;">
+          <h3 style="margin: 0;">Damages</h3>
+          <button id="copyDamages" type="button">Copy</button>
+        </div>
+        <textarea id="damagesOut" readonly></textarea>
+      </div>
+    </div>
+
+    <p id="meta" class="muted" style="margin-bottom:0;"></p>
+  </div>
+
+  <script>
+    const API_GRAVITY_FINAL = "/api/gravity-final";
+
+    const lineValueEl = document.getElementById("lineValue");
+    const calcSpotsBtn = document.getElementById("calcSpots");
+    const spotsStatusEl = document.getElementById("spotsStatus");
+    const spotsNeededEl = document.getElementById("spotsNeeded");
+
+    const verifyInputEl = document.getElementById("verifyInput");
+    const runFinalBtn = document.getElementById("runFinal");
+    const statusEl = document.getElementById("status");
+    const errEl = document.getElementById("err");
+
+    const finalOutEl = document.getElementById("finalOut");
+    const damagesOutEl = document.getElementById("damagesOut");
+    const metaEl = document.getElementById("meta");
+
+    const copyFinalBtn = document.getElementById("copyFinal");
+    const copyDamagesBtn = document.getElementById("copyDamages");
+
+    // TT-style verify retrieval
+    function normalizeVerifyInput(input) {
+      if (!input || typeof input !== "string") throw new Error("Missing verify link / code");
+      const s = input.trim();
+
+      const m = s.match(/giveaways\.random\.org\/verify\/([a-z0-9]+)/i);
+      if (m && m[1]) return `https://giveaways.random.org/verify/${m[1]}`;
+
+      if (/^[a-z0-9]+$/i.test(s)) return `https://giveaways.random.org/verify/${s}`;
+
+      throw new Error("Could not recognize a Random.org verify link or code.");
+    }
+
+    function copyFrom(textarea) {
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+    }
+
+    function stripOurNumbering(line) {
+      return String(line).replace(/^\s*\d+\.\s*/, "").trim();
+    }
+
+    // A) Spots needed via triangular math
+    calcSpotsBtn.addEventListener("click", () => {
+      spotsStatusEl.textContent = "";
+      spotsNeededEl.textContent = "—";
+
+      const lineValue = Number(lineValueEl.value);
+
+      if (!isFinite(lineValue) || lineValue <= 0) {
+        spotsStatusEl.textContent = "Enter a valid line value.";
+        return;
+      }
+
+      // Solve n(n+1)/2 >= lineValue
+      const n = Math.ceil((Math.sqrt(1 + 8 * lineValue) - 1) / 2);
+      spotsNeededEl.textContent = String(n);
+      spotsStatusEl.textContent = "Done.";
+    });
+
+    // B) Final damages
+    function buildFinalAndDamages(finalRoundList) {
+      const clean = (finalRoundList || []).map(stripOurNumbering).filter(Boolean);
+      if (clean.length === 0) return { finalText: "", damagesText: "" };
+
+      // Final standings (unchanged)
+      const finalText = clean.map((name, idx) => `${idx + 1}. ${name}`).join("\n");
+
+      // Aggregate dollar damages:
+      // 1st = $1, 2nd = $2, etc.
+      const totals = {};
+      clean.forEach((name, idx) => {
+        const amt = idx + 1;
+        totals[name] = (totals[name] || 0) + amt;
+      });
+
+      const damagesText = Object.entries(totals)
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, amt]) => `${name} — $${amt}`)
+        .join("\n");
+
+      return { finalText, damagesText };
+    }
+
+    runFinalBtn.addEventListener("click", async () => {
+      errEl.textContent = "";
+      statusEl.textContent = "Working...";
+      metaEl.textContent = "";
+      finalOutEl.value = "";
+      damagesOutEl.value = "";
+
+      let verifyUrl;
+      try {
+        verifyUrl = normalizeVerifyInput(verifyInputEl.value);
+      } catch (e) {
+        errEl.textContent = e.message;
+        statusEl.textContent = "";
+        return;
+      }
+
+      try {
+        const res = await fetch(API_GRAVITY_FINAL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: verifyUrl })
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "Request failed");
+
+        const finalRoundList = data.finalRoundList || [];
+        const { finalText, damagesText } = buildFinalAndDamages(finalRoundList);
+
+        finalOutEl.value = finalText;
+        damagesOutEl.value = damagesText;
+
+        const roundsCount = data.roundsCount ?? "?";
+        metaEl.textContent = `Done. Rounds found: ${roundsCount}. Final round size: ${finalRoundList.length}.`;
+        statusEl.textContent = "";
+      } catch (e) {
+        errEl.textContent = e.message;
+        statusEl.textContent = "";
+      }
+    });
+
+    copyFinalBtn.addEventListener("click", () => copyFrom(finalOutEl));
+    copyDamagesBtn.addEventListener("click", () => copyFrom(damagesOutEl));
+  </script>
+</body>
+</html>

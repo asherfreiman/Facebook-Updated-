@@ -1,0 +1,356 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Line Calculator</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 16px; }
+    input, select, button, textarea { font-size: 16px; padding: 10px; }
+    input, select { width: 100%; }
+    button { cursor: pointer; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:end; margin-top:12px; }
+    .cols { display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:12px; }
+    @media (max-width: 700px){ .cols{ grid-template-columns: 1fr; } }
+    .nav a { margin-right: 12px; }
+    .card { border: 1px solid #ddd; border-radius: 14px; padding: 16px; margin-top: 16px; }
+    .muted { color:#666; }
+    .error { color:#b00020; white-space:pre-wrap; margin-top:10px; }
+    .big { font-size: 24px; font-weight: 800; }
+    .pill { display:inline-block; padding:4px 10px; border:1px solid #eee; border-radius:999px; margin-right:8px; margin-top:8px; }
+    textarea { width:100%; height: 190px; }
+    table { width:100%; border-collapse: collapse; margin-top: 10px; }
+    td, th { border-bottom:1px solid #eee; padding:8px; text-align:left; }
+  </style>
+</head>
+<body>
+
+  <div class="nav">
+  <a href="/welcome.html"><b>Welcome</b></a>
+  <a href="/index.html">TT Calculator</a>
+  <a href="/gravity-calculator.html">Gravity Calculator</a>
+  <a href="/line-calculator.html">Line Calculator</a>
+  <a href="/cash.html">Cash Game Calculator</a>
+</div>
+
+  <h1>Line Calculator</h1>
+  <p class="muted">
+    Tool 1: Calculate <b>Total Line Value</b> from add-ons.<br/>
+    Tool 2: Calculate <b>BB Earnings</b> (Round 1/2/3) from card value before add-ons.
+  </p>
+
+  <!-- TOOL 1: TOTAL LINE VALUE -->
+  <div class="card">
+    <h2 style="margin-top:0;">Tool 1 — Total Line Value</h2>
+    <p class="muted" style="margin-top:0;">
+      Total = Card Value + (Over Comp %) + (Scammer %) + (Bottoms × $5)
+    </p>
+
+    <div class="cols">
+      <div>
+        <label>
+          Card Value ($)
+          <input id="cardValue" type="number" inputmode="decimal" step="0.01" placeholder="e.g. 100" />
+        </label>
+      </div>
+
+      <div>
+        <label>
+          Over Comp %
+          <select id="overComp">
+            <option value="0">0%</option>
+            <option value="0.10">10%</option>
+            <option value="0.20">20%</option>
+            <option value="0.30">30%</option>
+            <option value="0.40">40%</option>
+            <option value="0.50">50%</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="cols">
+      <div>
+        <label>
+          Scammer %
+          <select id="scammer">
+            <option value="0">0%</option>
+            <option value="0.01">1%</option>
+            <option value="0.02">2%</option>
+            <option value="0.03">3%</option>
+            <option value="0.04">4%</option>
+            <option value="0.05">5%</option>
+          </select>
+        </label>
+      </div>
+
+      <div>
+        <label>
+          Bottoms (each is $5)
+          <input id="bottoms" type="number" inputmode="numeric" step="1" value="0" />
+        </label>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="calcLine" type="button">Calculate Total Line Value</button>
+      <span id="lineStatus" class="muted"></span>
+    </div>
+
+    <div id="lineErr" class="error"></div>
+
+    <div class="row" style="align-items:center;">
+      <div style="flex:1; min-width:240px;">
+        <div class="muted">Total Line Value</div>
+        <div id="totalLineValue" class="big">—</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="pill" id="baseOut">Card: —</span>
+      <span class="pill" id="overOut">Over Comp: —</span>
+      <span class="pill" id="scamOut">Scammer: —</span>
+      <span class="pill" id="bottomOut">Bottoms: —</span>
+    </div>
+
+    <div class="row" style="justify-content: space-between; align-items:center;">
+      <span class="muted">Copy/Paste Summary</span>
+      <button id="copyLine" type="button">Copy</button>
+    </div>
+    <textarea id="lineSummary" readonly></textarea>
+  </div>
+
+  <!-- TOOL 2: BB EARNINGS -->
+  <div class="card">
+    <h2 style="margin-top:0;">Tool 2 — BB Earnings (How much you'd make)</h2>
+    <p class="muted" style="margin-top:0;">
+      Uses card value <b>before add-ons</b>.
+      Round 1: host makes X% of value. Each round reduces the value by Y%.
+      Round 2: host makes X% of new value. Round 3: host makes full remaining value.
+    </p>
+
+    <div class="cols">
+      <div>
+        <label>
+          Card Value before add-ons ($)
+          <input id="bbValue" type="number" inputmode="decimal" step="0.01" placeholder="e.g. 100" />
+        </label>
+      </div>
+
+      <div>
+        <label>
+          Host % (Rounds 1 & 2)
+          <select id="hostPct">
+            <option value="0.10">10%</option>
+            <option value="0.15">15%</option>
+            <option value="0.20" selected>20%</option>
+            <option value="0.25">25%</option>
+            <option value="0.30">30%</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="cols">
+      <div>
+        <label>
+          Round drop % (after each round)
+          <select id="dropPct">
+            <option value="0.05">5%</option>
+            <option value="0.10" selected>10%</option>
+            <option value="0.15">15%</option>
+            <option value="0.20">20%</option>
+          </select>
+        </label>
+      </div>
+
+      <div>
+        <label>
+          Rounds
+          <select id="rounds">
+            <option value="3" selected>3 rounds (R1, R2, R3)</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="calcBB" type="button">Calculate Earnings</button>
+      <span id="bbStatus" class="muted"></span>
+    </div>
+
+    <div id="bbErr" class="error"></div>
+
+    <div class="row" style="align-items:center;">
+      <div style="flex:1; min-width:240px;">
+        <div class="muted">Total you’d make</div>
+        <div id="bbTotal" class="big">—</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Round</th>
+          <th>Card Value</th>
+          <th>You make</th>
+        </tr>
+      </thead>
+      <tbody id="bbTable">
+        <tr><td colspan="3" class="muted">—</td></tr>
+      </tbody>
+    </table>
+
+    <div class="row" style="justify-content: space-between; align-items:center;">
+      <span class="muted">Copy/Paste Summary</span>
+      <button id="copyBB" type="button">Copy</button>
+    </div>
+    <textarea id="bbSummary" readonly></textarea>
+  </div>
+
+  <script>
+    function money(n) {
+      const x = Number(n) || 0;
+      return x.toLocaleString(undefined, { style: "currency", currency: "USD" });
+    }
+    function pctLabel(dec) {
+      return `${Math.round((Number(dec) || 0) * 100)}%`;
+    }
+    function copyFrom(textarea) {
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+    }
+
+    // --------------------
+    // TOOL 1: Total Line Value
+    // --------------------
+    const cardValueEl = document.getElementById("cardValue");
+    const overCompEl = document.getElementById("overComp");
+    const scammerEl = document.getElementById("scammer");
+    const bottomsEl = document.getElementById("bottoms");
+
+    const calcLineBtn = document.getElementById("calcLine");
+    const lineStatusEl = document.getElementById("lineStatus");
+    const lineErrEl = document.getElementById("lineErr");
+
+    const totalLineValueEl = document.getElementById("totalLineValue");
+    const baseOutEl = document.getElementById("baseOut");
+    const overOutEl = document.getElementById("overOut");
+    const scamOutEl = document.getElementById("scamOut");
+    const bottomOutEl = document.getElementById("bottomOut");
+
+    const lineSummaryEl = document.getElementById("lineSummary");
+    document.getElementById("copyLine").addEventListener("click", () => copyFrom(lineSummaryEl));
+
+    calcLineBtn.addEventListener("click", () => {
+      lineErrEl.textContent = "";
+      lineStatusEl.textContent = "";
+
+      const V = Number(cardValueEl.value);
+      const over = Number(overCompEl.value);
+      const scam = Number(scammerEl.value);
+      const bottoms = Number(bottomsEl.value);
+
+      if (!isFinite(V) || V <= 0) return lineErrEl.textContent = "Enter a valid card value.";
+      if (!isFinite(over) || over < 0) return lineErrEl.textContent = "Invalid over-comp %.";
+      if (!isFinite(scam) || scam < 0) return lineErrEl.textContent = "Invalid scammer %.";
+      if (!Number.isInteger(bottoms) || bottoms < 0) return lineErrEl.textContent = "Bottoms must be a whole number (0 or more).";
+
+      const overAmt = V * over;
+      const scamAmt = V * scam;
+      const bottomAmt = bottoms * 5;
+
+      const total = V + overAmt + scamAmt + bottomAmt;
+
+      totalLineValueEl.textContent = money(total);
+      baseOutEl.textContent = `Card: ${money(V)}`;
+      overOutEl.textContent = `Over Comp (${pctLabel(over)}): ${money(overAmt)}`;
+      scamOutEl.textContent = `Scammer (${pctLabel(scam)}): ${money(scamAmt)}`;
+      bottomOutEl.textContent = `Bottoms (${bottoms} × $5): ${money(bottomAmt)}`;
+
+      lineSummaryEl.value =
+`Card: ${money(V)}
+Over Comp (${pctLabel(over)}): ${money(overAmt)}
+Scammer (${pctLabel(scam)}): ${money(scamAmt)}
+Bottoms (${bottoms} × $5): ${money(bottomAmt)}
+-------------------------
+Total Line Value: ${money(total)}`;
+
+      lineStatusEl.textContent = "Done.";
+    });
+
+    // --------------------
+    // TOOL 2: BB Earnings
+    // --------------------
+    const bbValueEl = document.getElementById("bbValue");
+    const hostPctEl = document.getElementById("hostPct");
+    const dropPctEl = document.getElementById("dropPct");
+
+    const calcBBBtn = document.getElementById("calcBB");
+    const bbStatusEl = document.getElementById("bbStatus");
+    const bbErrEl = document.getElementById("bbErr");
+
+    const bbTotalEl = document.getElementById("bbTotal");
+    const bbTableEl = document.getElementById("bbTable");
+    const bbSummaryEl = document.getElementById("bbSummary");
+    document.getElementById("copyBB").addEventListener("click", () => copyFrom(bbSummaryEl));
+
+    calcBBBtn.addEventListener("click", () => {
+      bbErrEl.textContent = "";
+      bbStatusEl.textContent = "";
+      bbTotalEl.textContent = "—";
+      bbTableEl.innerHTML = `<tr><td colspan="3" class="muted">—</td></tr>`;
+      bbSummaryEl.value = "";
+
+      const V = Number(bbValueEl.value);
+      const hostPct = Number(hostPctEl.value);   // applies to rounds 1 & 2
+      const dropPct = Number(dropPctEl.value);   // value drops after each round
+
+      if (!isFinite(V) || V <= 0) return bbErrEl.textContent = "Enter a valid card value.";
+      if (!isFinite(hostPct) || hostPct < 0) return bbErrEl.textContent = "Invalid host %.";
+      if (!isFinite(dropPct) || dropPct < 0 || dropPct >= 1) return bbErrEl.textContent = "Invalid drop %.";
+
+      const r1Value = V;
+      const r2Value = V * (1 - dropPct);
+      const r3Value = r2Value * (1 - dropPct);
+
+      const r1Make = r1Value * hostPct;
+      const r2Make = r2Value * hostPct;
+      const r3Make = r3Value; // full remaining value in round 3
+
+      const totalMake = r1Make + r2Make + r3Make;
+
+      bbTotalEl.textContent = money(totalMake);
+
+      const rows = [
+        { round: "Round 1", value: r1Value, make: r1Make },
+        { round: "Round 2", value: r2Value, make: r2Make },
+        { round: "Round 3", value: r3Value, make: r3Make }
+      ];
+
+      bbTableEl.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.round}</td>
+          <td>${money(r.value)}</td>
+          <td><b>${money(r.make)}</b></td>
+        </tr>
+      `).join("");
+
+      bbSummaryEl.value =
+`BB Earnings (card value before add-ons: ${money(V)})
+Host % (R1 & R2): ${pctLabel(hostPct)}
+Round drop: ${pctLabel(dropPct)}
+
+Round 1: value ${money(r1Value)} → you make ${money(r1Make)}
+Round 2: value ${money(r2Value)} → you make ${money(r2Make)}
+Round 3: value ${money(r3Value)} → you make ${money(r3Make)}
+-------------------------
+Total you make: ${money(totalMake)}`;
+
+      bbStatusEl.textContent = "Done.";
+    });
+  </script>
+
+</body>
+</html>

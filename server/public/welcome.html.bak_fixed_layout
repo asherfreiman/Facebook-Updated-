@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Welcome</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 16px; }
+    .nav a { margin-right: 12px; }
+    .card { border: 1px solid #ddd; border-radius: 14px; padding: 18px; margin-top: 18px; }
+    h1 { margin-top: 0; }
+    .tools { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 20px; }
+    @media (max-width: 700px){ .tools { grid-template-columns: 1fr; } }
+    .tool { border: 1px solid #eee; border-radius: 12px; padding: 14px; }
+    .tool h3 { margin-top: 0; }
+    .tool a { text-decoration: none; font-weight: 600; }
+    .muted { color: #666; }
+  </style>
+</head>
+<body>
+
+  <div class="nav">
+  <a href="/welcome.html"><b>Welcome</b></a>
+  <a href="/index.html">TT Calculator</a>
+  <a href="/gravity-calculator.html">Gravity Calculator</a>
+  <a href="/line-calculator.html">Line Calculator ✅</a>
+  <a href="/cash.html">Cash Game Calculator</a>
+</div>
+
+  <div class="card">
+    <h1>Welcome to Hobby Tools</h1>
+    <p class="muted">
+      These tools are built for the hobby community to make giveaways, lines, and games
+      faster, cleaner, and fairer. Everything here is free to use.
+    </p>
+
+    <p>
+      Pick a tool below to get started:
+    </p>
+  </div>
+
+  <div </div>
+</div>
+</div>
+
+    <div class="tool">
+      <h3>Gravity Calculator</h3>
+      <p class="muted">
+        Convert a gravity line into spots using triangular math, then calculate
+        final-round dollar damages from a Random.org verify.
+      </p>
+      <a href="/gravity-calculator.html">Open Gravity Calculator →</a>
+    </div>
+
+    <div class="tool">
+      <h3>Cash Game Calculator</h3>
+      <p class="muted">
+        Track and calculate cash game outcomes with clarity and speed.
+      </p>
+      <a href="/cash.html">Open Cash Game Calculator →</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="muted">
+      Built by Asher for the hobby. These tools will always remain free.
+      If you ever have ideas for improvements, features, or new tools,
+      they’re built for you.
+    </p>
+  </div>
+
+</body>
+</html>
+
