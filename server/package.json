@@ -1,15 +1,17 @@
 {
-  "name": "giveaway-site",
+  "name": "facebook-games-tools",
   "version": "1.0.0",
-  "type": "module",
+  "description": "Hobby tools project: TT, Gravity, Line, Cash calculators",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node index.js"
   },
+  "author": "Asher Freiman",
+  "license": "MIT",
   "dependencies": {
-    "cheerio": "^1.0.0-rc.12",
+    "cheerio": "^1.1.2",
     "cors": "^2.8.5",
-    "express": "^4.19.2"
+    "express": "^4.18.2"
   }
 }
-
