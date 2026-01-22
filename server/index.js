@@ -1,3 +1,10 @@
+import fs from "fs";
+
+app.get("/debug-files", (req, res) => {
+  const files = fs.readdirSync(path.join(__dirname, "public"));
+  res.json({ files });
+});
+
 import express from "express";
 import cors from "cors";
 import * as cheerio from "cheerio";
